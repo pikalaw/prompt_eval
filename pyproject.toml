@@ -1,0 +1,27 @@
+[tool.poetry]
+name = "prompt-eval"
+version = "0.1.0"
+description = ""
+authors = ["Lawrence Tsang <pikalaw@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+datasets = "^2.20.0"
+pydantic = "^2.8.2"
+devtools = "^0.12.2"
+huggingface-hub = "^0.24.0"
+
+
+[tool.poetry.group.dev.dependencies]
+mypy = "^1.11.0"
+black = "^24.4.2"
+pytest = "^8.2.2"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.mypy]
+# Many Google's libraries do not have stub packages.
+ignore_missing_imports = true
