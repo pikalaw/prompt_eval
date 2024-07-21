@@ -32,17 +32,17 @@ class Experiment(BaseModel, frozen=True):
 
 
 async def eval_baseline(sample: Sample) -> Experiment:
-    output = await generate_content(
+    model_answer = await generate_content(
         model=MODEL, prompt=SOLVE_PROMPT, input=sample.question
     )
     grade = await grade_answers(
         question=sample.question,
         human_answer=sample.answer,
-        model_answer=output,
+        model_answer=model_answer,
     )
     return Experiment(
         question=sample.question,
         human_answer=sample.answer,
-        model_answer=output,
+        model_answer=model_answer,
         grade=grade,
     )

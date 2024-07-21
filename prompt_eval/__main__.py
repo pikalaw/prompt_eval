@@ -12,6 +12,18 @@ from .eval_1_prompt_reflection import eval_1_prompt_reflection
 from .eval_N_prompts_reflection import eval_N_prompts_reflection
 
 
+async def eval_and_log(
+    eval_func: Callable[[Sample], Any],
+    sample: Sample,
+    output: TextIOWrapper,
+) -> None:
+    try:
+        experiment = await eval_func(sample)
+        output.write(str(debug.format(experiment)))
+    except Exception as e:
+        logging.exception(debug.format(sample))
+
+
 async def run_eval(
     *,
     eval_func: Callable[[Sample], Any],
@@ -20,19 +32,22 @@ async def run_eval(
     limit: int | None = None
 ) -> None:
     actual_limit = limit or math.inf
-    experiments = await asyncio.gather(
-        *[eval_func(sample) for i, sample in enumerate(samples) if i < actual_limit],
-        return_exceptions=True,
-    )
     with open(output_filename, "w") as output:
-        for experiment in experiments:
-            output.write(str(debug.format(experiment)))
+        await asyncio.gather(
+            *[
+                eval_and_log(eval_func, sample, output)
+                for i, sample in enumerate(samples)
+                if i < actual_limit
+            ],
+            return_exceptions=True,
+        )
 
 
 async def main() -> None:
     logging.basicConfig(
         level=logging.INFO,
         format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+        filename="error.log",
     )
 
     token = os.getenv("HUGGINGFACE_TOKEN")
