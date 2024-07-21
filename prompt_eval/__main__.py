@@ -5,7 +5,7 @@ from io import TextIOWrapper
 import logging
 import math
 import os
-from typing import Any, Callable, Iterable
+from typing import Any, Awaitable, Callable, Iterable
 from .dataset_loader import load_samples, Sample
 from .eval_baseline import eval_baseline
 from .eval_1_prompt_reflection import eval_1_prompt_reflection
@@ -16,7 +16,7 @@ done_count = 0
 
 
 async def eval_and_log(
-    eval_func: Callable[[Sample], Any],
+    eval_func: Callable[[Sample], Awaitable[Any]],
     sample: Sample,
     output: TextIOWrapper,
 ) -> None:
@@ -35,7 +35,7 @@ async def eval_and_log(
 
 async def run_eval(
     *,
-    eval_func: Callable[[Sample], Any],
+    eval_func: Callable[[Sample], Awaitable[Any]],
     samples: Iterable[Sample],
     output_filename: str,
     limit: int | None = None
