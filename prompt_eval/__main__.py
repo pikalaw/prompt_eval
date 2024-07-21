@@ -12,6 +12,9 @@ from .eval_1_prompt_reflection import eval_1_prompt_reflection
 from .eval_N_prompts_reflection import eval_N_prompts_reflection
 
 
+done_count = 0
+
+
 async def eval_and_log(
     eval_func: Callable[[Sample], Any],
     sample: Sample,
@@ -20,6 +23,12 @@ async def eval_and_log(
     try:
         experiment = await eval_func(sample)
         output.write(str(debug.format(experiment)))
+        output.flush()
+
+        global done_count
+        done_count += 1
+        if done_count % 10 == 0:
+            logging.info(debug.format(done_count))
     except Exception as e:
         logging.exception(debug.format(sample))
 
@@ -48,6 +57,7 @@ async def main() -> None:
         level=logging.INFO,
         format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
         filename="error.log",
+        filemode="w",
     )
 
     token = os.getenv("HUGGINGFACE_TOKEN")

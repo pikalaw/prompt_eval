@@ -20,10 +20,8 @@ Reference Answer: 4:00 PM
 Model Answer: 4:00 PM
 ```
 
-Your reply should be this:
-```
+Your reply should be a single character:
 1
-```
 """
 
 
@@ -37,7 +35,7 @@ async def grade_answers(*, question: str, human_answer: str, model_answer: str) 
             model_answer=model_answer,
         ),
     )
-    return int(grade)
+    return int(grade.strip())
 
 
 def _extract_answer(solution: str) -> str:

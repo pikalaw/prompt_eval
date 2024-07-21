@@ -25,12 +25,10 @@ MAX_SEC_TO_WAIT_ON_RESOURCE_EXHAUSTED = 60 * 5
 MAX_INTERNAL_SERVER_ERRORS = 10
 
 
-semaphore = asyncio.BoundedSemaphore(value=20)
-
-
 def limit_concurrency(*, concurrency: int):
-    def decorator(func: F) -> F:
+    semaphore = asyncio.BoundedSemaphore(value=concurrency)
 
+    def decorator(func: F) -> F:
         @functools.wraps(func)
         async def wrapper(*args: Any, **kwargs: Any) -> Any:
             async with semaphore:
