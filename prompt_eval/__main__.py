@@ -13,12 +13,13 @@ from .eval_N_prompts_reflection import eval_N_prompts_reflection
 
 
 async def eval_and_log(
-    eval_func: Callable[[Sample], Awaitable[Any]],
+    model: str,
+    eval_func: Callable[[str, Sample], Awaitable[Any]],
     sample: Sample,
     output: TextIOWrapper,
 ) -> None:
     try:
-        experiment = await eval_func(sample)
+        experiment = await eval_func(model, sample)
         output.write(str(debug.format(experiment)))
         output.flush()
     except Exception as e:
@@ -36,7 +37,8 @@ def batch_samples(samples: Iterable[Sample], batch_size: int) -> Iterator[list[S
 
 async def run_eval(
     *,
-    eval_func: Callable[[Sample], Awaitable[Any]],
+    model: str,
+    eval_func: Callable[[str, Sample], Awaitable[Any]],
     samples: Iterable[Sample],
     output_filename: str,
     batch_size: int = 10,
@@ -49,7 +51,7 @@ async def run_eval(
         for batch in batch_samples(samples, batch_size=batch_size):
             results = await asyncio.gather(
                 *[
-                    eval_and_log(eval_func, sample, output)
+                    eval_and_log(model, eval_func, sample, output)
                     for i, sample in enumerate(batch)
                 ],
                 return_exceptions=True,
@@ -78,10 +80,12 @@ async def main() -> None:
 
     samples = list(load_samples("openai/gsm8k", "main", split="train"))
 
-    limit = None
+    model = "gemini-1.5-flash"
     batch_size = 10
+    limit = None
 
     await run_eval(
+        model=model,
         eval_func=eval_baseline,
         samples=samples,
         output_filename="baseline_output.log",
@@ -89,6 +93,7 @@ async def main() -> None:
         limit=limit,
     )
     await run_eval(
+        model=model,
         eval_func=eval_1_prompt_reflection,
         samples=samples,
         output_filename="1_prompts_output.log",
@@ -96,6 +101,7 @@ async def main() -> None:
         limit=limit,
     )
     await run_eval(
+        model=model,
         eval_func=eval_N_prompts_reflection,
         samples=samples,
         output_filename="N_prompts_output.log",

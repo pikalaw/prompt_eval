@@ -2,8 +2,6 @@ import re
 from .gemini import generate_content
 
 
-MODEL = "gemini-1.5-flash"
-
 _GRADE_PROMPT = """Given a word problem, two responses are provided.
 The first one is the reference answer, which is correct.
 The second one is the model's answer, which may or may not be correct.
@@ -25,9 +23,11 @@ Your reply should be a single character:
 """
 
 
-async def grade_answers(*, question: str, human_answer: str, model_answer: str) -> int:
+async def grade_answers(
+    *, model: str, question: str, human_answer: str, model_answer: str
+) -> int:
     grade = await generate_content(
-        model=MODEL,
+        model=model,
         prompt=_GRADE_PROMPT,
         input=_format_grading_input(
             question=question,

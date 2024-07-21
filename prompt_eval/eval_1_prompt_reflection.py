@@ -1,7 +1,7 @@
 from pydantic import BaseModel
 from .dataset_loader import Sample
 from .gemini import generate_content
-from .shared import MODEL, grade_answers
+from .shared import grade_answers
 
 
 SOLVE_PROMPT = """Solve the given word problem.
@@ -42,12 +42,14 @@ class Experiment(BaseModel, frozen=True):
 
 
 async def eval_1_prompt_reflection(
+    model: str,
     sample: Sample,
 ) -> Experiment:
     model_answer = await generate_content(
-        model=MODEL, prompt=SOLVE_PROMPT, input=sample.question
+        model=model, prompt=SOLVE_PROMPT, input=sample.question
     )
     grade = await grade_answers(
+        model=model,
         question=sample.question,
         human_answer=sample.answer,
         model_answer=model_answer,
