@@ -39,13 +39,14 @@ async def run_eval(
     eval_func: Callable[[Sample], Awaitable[Any]],
     samples: Iterable[Sample],
     output_filename: str,
+    batch_size: int = 10,
     limit: int | None = None,
 ) -> None:
     actual_limit = limit or math.inf
     done = 0
     bad = 0
     with open(output_filename, "w") as output:
-        for batch in batch_samples(samples, batch_size=10):
+        for batch in batch_samples(samples, batch_size=batch_size):
             results = await asyncio.gather(
                 *[
                     eval_and_log(eval_func, sample, output)
@@ -78,22 +79,27 @@ async def main() -> None:
     samples = list(load_samples("openai/gsm8k", "main", split="train"))
 
     limit = None
+    batch_size = 10
+
     await run_eval(
         eval_func=eval_baseline,
         samples=samples,
         output_filename="baseline_output.log",
+        batch_size=batch_size,
         limit=limit,
     )
     await run_eval(
         eval_func=eval_1_prompt_reflection,
         samples=samples,
         output_filename="1_prompts_output.log",
+        batch_size=batch_size,
         limit=limit,
     )
     await run_eval(
         eval_func=eval_N_prompts_reflection,
         samples=samples,
         output_filename="N_prompts_output.log",
+        batch_size=batch_size,
         limit=limit,
     )
 
