@@ -5,14 +5,11 @@ from io import TextIOWrapper
 import logging
 import math
 import os
-from typing import Any, Awaitable, Callable, Iterable
+from typing import Any, Awaitable, Callable, Iterable, Iterator
 from .dataset_loader import load_samples, Sample
 from .eval_baseline import eval_baseline
 from .eval_1_prompt_reflection import eval_1_prompt_reflection
 from .eval_N_prompts_reflection import eval_N_prompts_reflection
-
-
-done_count = 0
 
 
 async def eval_and_log(
@@ -24,13 +21,17 @@ async def eval_and_log(
         experiment = await eval_func(sample)
         output.write(str(debug.format(experiment)))
         output.flush()
-
-        global done_count
-        done_count += 1
-        if done_count % 10 == 0:
-            logging.info(debug.format(done_count))
     except Exception as e:
         logging.exception(debug.format(sample))
+
+
+def batch_samples(samples: Iterable[Sample], batch_size: int) -> Iterator[list[Sample]]:
+    batch: list[Sample] = []
+    for sample in samples:
+        batch.append(sample)
+        if len(batch) == batch_size:
+            yield batch
+            batch = []
 
 
 async def run_eval(
@@ -38,18 +39,29 @@ async def run_eval(
     eval_func: Callable[[Sample], Awaitable[Any]],
     samples: Iterable[Sample],
     output_filename: str,
-    limit: int | None = None
+    limit: int | None = None,
 ) -> None:
     actual_limit = limit or math.inf
+    done = 0
+    bad = 0
     with open(output_filename, "w") as output:
-        await asyncio.gather(
-            *[
-                eval_and_log(eval_func, sample, output)
-                for i, sample in enumerate(samples)
-                if i < actual_limit
-            ],
-            return_exceptions=True,
-        )
+        for batch in batch_samples(samples, batch_size=10):
+            results = await asyncio.gather(
+                *[
+                    eval_and_log(eval_func, sample, output)
+                    for i, sample in enumerate(batch)
+                ],
+                return_exceptions=True,
+            )
+
+            done += len(batch)
+            if done >= actual_limit:
+                break
+
+            bad += len(
+                [exception for exception in results if isinstance(exception, Exception)]
+            )
+            logging.info(f"Done {done} samples, with {bad} errors.")
 
 
 async def main() -> None:
