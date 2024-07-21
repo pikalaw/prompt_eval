@@ -58,13 +58,13 @@ async def run_eval(
             )
 
             done += len(batch)
-            if done >= actual_limit:
-                break
-
             bad += len(
                 [exception for exception in results if isinstance(exception, Exception)]
             )
             logging.info(f"Done {done} samples, with {bad} errors.")
+
+            if done >= actual_limit:
+                break
 
 
 async def main() -> None:
