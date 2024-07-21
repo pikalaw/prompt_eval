@@ -50,14 +50,11 @@ async def run_eval(
     with open(output_filename, "w") as output:
         for batch in batch_samples(samples, batch_size=batch_size):
             results = await asyncio.gather(
-                *[
-                    eval_and_log(model, eval_func, sample, output)
-                    for i, sample in enumerate(batch)
-                ],
+                *[eval_and_log(model, eval_func, sample, output) for sample in batch],
                 return_exceptions=True,
             )
 
-            done += len(batch)
+            done += len(results)
             bad += len(
                 [exception for exception in results if isinstance(exception, Exception)]
             )
