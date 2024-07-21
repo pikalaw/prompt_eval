@@ -10,6 +10,7 @@ poetry add pydantic devtools
 poetry add mypy black pytest --group dev
 
 poetry add datasets huggingface_hub
+poetry add google-generativeai
 ```
 
 If `poetry` hangs, add this to the `.zshrc`:
