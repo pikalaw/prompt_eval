@@ -47,6 +47,6 @@ def _extract_answer(solution: str) -> str:
 def _format_grading_input(
     *, question: str, human_answer: str, model_answer: str
 ) -> str:
-    human_answer = _extract_answer(human_answer)
-    model_answer = _extract_answer(model_answer)
-    return f"""Question: {question}\nReference Answer: {human_answer}\nModel Answer: {model_answer}"""
+    human_short_answer = _extract_answer(human_answer)
+    model_short_answer = _extract_answer(model_answer)
+    return f"""Question: {question}\nReference Answer: {human_short_answer}\nModel Answer: {model_short_answer}"""

@@ -1,7 +1,7 @@
 from pydantic import BaseModel
 from .dataset_loader import Sample
 from .gemini import generate_content
-from .shared import grade_answers
+from .grader import grade_answers
 
 
 SOLVE_PROMPT = """Solve the given word problem.
@@ -37,7 +37,7 @@ Revised answer: The approach speed is 60 + 80 = 140 mph. So, the two trains will
 class Experiment(BaseModel, frozen=True):
     question: str
     human_answer: str
-    model_answer: str
+    llm_answer: str
     grade: int
 
 
@@ -57,6 +57,6 @@ async def eval_1_prompt_reflection(
     return Experiment(
         question=sample.question,
         human_answer=sample.answer,
-        model_answer=model_answer,
+        llm_answer=model_answer,
         grade=grade,
     )

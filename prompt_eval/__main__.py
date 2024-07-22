@@ -2,7 +2,6 @@ import asyncio
 import csv
 from devtools import debug
 from huggingface_hub import login
-from io import TextIOWrapper
 import logging
 import math
 import os
@@ -11,7 +10,7 @@ from typing import cast, Iterable, Iterator, TypeVar
 from .dataset_loader import load_samples, Sample
 from .eval_baseline import eval_baseline
 from .eval_1_prompt_reflection import eval_1_prompt_reflection
-from .eval_N_prompts_reflection import eval_N_prompts_reflection
+from .eval_N_prompts_reflection import eval_n_prompts_reflection
 
 
 T = TypeVar("T")
@@ -23,18 +22,18 @@ class Experiment(BaseModel):
     human_answer: str
 
     # Output from the baseline model.
-    model_baseline_answer: str | None = None
+    llm_baseline_answer: str | None = None
     grade_baseline: int | None = None
 
     # Output from the 1-prompt reflection model.
-    model_1_prompt_answer: str | None = None
+    llm_1_prompt_answer: str | None = None
     grade_1_prompt: int | None = None
 
     # Output from the N-prompts reflection model.
-    model_N_prompts_initial_answer: str | None = None
-    model_N_prompts_reflection: str | None = None
-    model_N_prompts_final_answer: str | None = None
-    grade_N_prompts: int | None = None
+    llm_n_prompts_initial_answer: str | None = None
+    llm_n_prompts_reflection: str | None = None
+    llm_n_prompts_final_answer: str | None = None
+    grade_n_prompts: int | None = None
 
 
 async def eval_all_experiments(
@@ -49,7 +48,7 @@ async def eval_all_experiments(
     try:
         baseline_experiment = await eval_baseline(model, sample)
 
-        experiment.model_baseline_answer = baseline_experiment.model_answer
+        experiment.llm_baseline_answer = baseline_experiment.llm_answer
         experiment.grade_baseline = baseline_experiment.grade
     except Exception as e:
         logging.exception(debug.format(sample))
@@ -57,20 +56,20 @@ async def eval_all_experiments(
     try:
         one_prompt_experiment = await eval_1_prompt_reflection(model, sample)
 
-        experiment.model_1_prompt_answer = one_prompt_experiment.model_answer
+        experiment.llm_1_prompt_answer = one_prompt_experiment.llm_answer
         experiment.grade_1_prompt = one_prompt_experiment.grade
     except Exception as e:
         logging.exception(debug.format(sample))
 
     try:
-        n_prompt_experiment = await eval_N_prompts_reflection(model, sample)
+        n_prompts_experiment = await eval_n_prompts_reflection(model, sample)
 
-        experiment.model_N_prompts_initial_answer = (
-            n_prompt_experiment.initial_model_answer
+        experiment.llm_n_prompts_initial_answer = (
+            n_prompts_experiment.initial_model_answer
         )
-        experiment.model_N_prompts_reflection = n_prompt_experiment.reflection
-        experiment.model_N_prompts_final_answer = n_prompt_experiment.final_model_answer
-        experiment.grade_N_prompts = n_prompt_experiment.grade
+        experiment.llm_n_prompts_reflection = n_prompts_experiment.reflection
+        experiment.llm_n_prompts_final_answer = n_prompts_experiment.final_model_answer
+        experiment.grade_n_prompts = n_prompts_experiment.grade
     except Exception as e:
         logging.exception(debug.format(sample))
 
@@ -90,18 +89,16 @@ def format_experiment(experiment: Experiment) -> Experiment:
     return Experiment(
         question=escape_string(experiment.question),
         human_answer=escape_string(experiment.human_answer),
-        model_baseline_answer=escape_string(experiment.model_baseline_answer),
+        llm_baseline_answer=escape_string(experiment.llm_baseline_answer),
         grade_baseline=experiment.grade_baseline,
-        model_1_prompt_answer=escape_string(experiment.model_1_prompt_answer),
+        llm_1_prompt_answer=escape_string(experiment.llm_1_prompt_answer),
         grade_1_prompt=experiment.grade_1_prompt,
-        model_N_prompts_initial_answer=escape_string(
-            experiment.model_N_prompts_initial_answer
+        llm_n_prompts_initial_answer=escape_string(
+            experiment.llm_n_prompts_initial_answer
         ),
-        model_N_prompts_reflection=escape_string(experiment.model_N_prompts_reflection),
-        model_N_prompts_final_answer=escape_string(
-            experiment.model_N_prompts_final_answer
-        ),
-        grade_N_prompts=experiment.grade_N_prompts,
+        llm_n_prompts_reflection=escape_string(experiment.llm_n_prompts_reflection),
+        llm_n_prompts_final_answer=escape_string(experiment.llm_n_prompts_final_answer),
+        grade_n_prompts=experiment.grade_n_prompts,
     )
 
 
