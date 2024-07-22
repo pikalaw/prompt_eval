@@ -12,3 +12,4 @@ dmypy.json
 # data files
 *.json
 *.log
+*.csv
