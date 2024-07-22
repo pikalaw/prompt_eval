@@ -22,17 +22,17 @@ class Experiment(BaseModel):
     human_answer: str
 
     # Output from the baseline model.
-    llm_baseline_answer: str | None = None
+    baseline_answer: str | None = None
     grade_baseline: int | None = None
 
     # Output from the 1-prompt reflection model.
-    llm_1_prompt_answer: str | None = None
+    one_prompt_answer: str | None = None
     grade_1_prompt: int | None = None
 
     # Output from the N-prompts reflection model.
-    llm_n_prompts_initial_answer: str | None = None
-    llm_n_prompts_reflection: str | None = None
-    llm_n_prompts_final_answer: str | None = None
+    n_prompts_initial_answer: str | None = None
+    n_prompts_reflection: str | None = None
+    n_prompts_final_answer: str | None = None
     grade_n_prompts: int | None = None
 
 
@@ -48,7 +48,7 @@ async def eval_all_experiments(
     try:
         baseline_experiment = await eval_baseline(model, sample)
 
-        experiment.llm_baseline_answer = baseline_experiment.llm_answer
+        experiment.baseline_answer = baseline_experiment.llm_answer
         experiment.grade_baseline = baseline_experiment.grade
     except Exception as e:
         logging.exception(debug.format(sample))
@@ -56,7 +56,7 @@ async def eval_all_experiments(
     try:
         one_prompt_experiment = await eval_1_prompt_reflection(model, sample)
 
-        experiment.llm_1_prompt_answer = one_prompt_experiment.llm_answer
+        experiment.one_prompt_answer = one_prompt_experiment.llm_answer
         experiment.grade_1_prompt = one_prompt_experiment.grade
     except Exception as e:
         logging.exception(debug.format(sample))
@@ -64,11 +64,9 @@ async def eval_all_experiments(
     try:
         n_prompts_experiment = await eval_n_prompts_reflection(model, sample)
 
-        experiment.llm_n_prompts_initial_answer = (
-            n_prompts_experiment.initial_model_answer
-        )
-        experiment.llm_n_prompts_reflection = n_prompts_experiment.reflection
-        experiment.llm_n_prompts_final_answer = n_prompts_experiment.final_model_answer
+        experiment.n_prompts_initial_answer = n_prompts_experiment.initial_model_answer
+        experiment.n_prompts_reflection = n_prompts_experiment.reflection
+        experiment.n_prompts_final_answer = n_prompts_experiment.final_model_answer
         experiment.grade_n_prompts = n_prompts_experiment.grade
     except Exception as e:
         logging.exception(debug.format(sample))
@@ -89,15 +87,13 @@ def format_experiment(experiment: Experiment) -> Experiment:
     return Experiment(
         question=escape_string(experiment.question),
         human_answer=escape_string(experiment.human_answer),
-        llm_baseline_answer=escape_string(experiment.llm_baseline_answer),
+        baseline_answer=escape_string(experiment.baseline_answer),
         grade_baseline=experiment.grade_baseline,
-        llm_1_prompt_answer=escape_string(experiment.llm_1_prompt_answer),
+        one_prompt_answer=escape_string(experiment.one_prompt_answer),
         grade_1_prompt=experiment.grade_1_prompt,
-        llm_n_prompts_initial_answer=escape_string(
-            experiment.llm_n_prompts_initial_answer
-        ),
-        llm_n_prompts_reflection=escape_string(experiment.llm_n_prompts_reflection),
-        llm_n_prompts_final_answer=escape_string(experiment.llm_n_prompts_final_answer),
+        n_prompts_initial_answer=escape_string(experiment.n_prompts_initial_answer),
+        n_prompts_reflection=escape_string(experiment.n_prompts_reflection),
+        n_prompts_final_answer=escape_string(experiment.n_prompts_final_answer),
         grade_n_prompts=experiment.grade_n_prompts,
     )
 
