@@ -1,101 +1,15 @@
 import asyncio
 import csv
-from devtools import debug
 from huggingface_hub import login
 import logging
 import math
 import os
-from pydantic import BaseModel
 from typing import cast, Iterable, Iterator, TypeVar
 from .dataset_loader import load_samples, Sample
-from .eval_baseline import eval_baseline
-from .eval_1_prompt_reflection import eval_1_prompt_reflection
-from .eval_N_prompts_reflection import eval_n_prompts_reflection
+from .eval_all import Experiment, eval_all_experiments
 
 
 T = TypeVar("T")
-
-
-class Experiment(BaseModel):
-    # Data from the eval dataset.
-    question: str
-    human_answer: str
-
-    # Output from the baseline model.
-    baseline_answer: str | None = None
-    grade_baseline: int | None = None
-
-    # Output from the 1-prompt reflection model.
-    one_prompt_answer: str | None = None
-    grade_1_prompt: int | None = None
-
-    # Output from the N-prompts reflection model.
-    n_prompts_initial_answer: str | None = None
-    n_prompts_reflection: str | None = None
-    n_prompts_final_answer: str | None = None
-    grade_n_prompts: int | None = None
-
-
-async def eval_all_experiments(
-    model: str,
-    sample: Sample,
-) -> Experiment:
-    experiment = Experiment(
-        question=sample.question,
-        human_answer=sample.answer,
-    )
-
-    try:
-        baseline_experiment = await eval_baseline(model, sample)
-
-        experiment.baseline_answer = baseline_experiment.llm_answer
-        experiment.grade_baseline = baseline_experiment.grade
-    except Exception as e:
-        logging.exception(debug.format(sample))
-
-    try:
-        one_prompt_experiment = await eval_1_prompt_reflection(model, sample)
-
-        experiment.one_prompt_answer = one_prompt_experiment.llm_answer
-        experiment.grade_1_prompt = one_prompt_experiment.grade
-    except Exception as e:
-        logging.exception(debug.format(sample))
-
-    try:
-        n_prompts_experiment = await eval_n_prompts_reflection(model, sample)
-
-        experiment.n_prompts_initial_answer = n_prompts_experiment.initial_model_answer
-        experiment.n_prompts_reflection = n_prompts_experiment.reflection
-        experiment.n_prompts_final_answer = n_prompts_experiment.final_model_answer
-        experiment.grade_n_prompts = n_prompts_experiment.grade
-    except Exception as e:
-        logging.exception(debug.format(sample))
-
-    return experiment
-
-
-def escape_string(s: T) -> T:
-    """Escape all \n characters."""
-    if s is None:
-        return None
-    assert isinstance(s, str)
-    return cast(T, s.replace("\n", "\\n"))
-
-
-def format_experiment(experiment: Experiment) -> Experiment:
-    """For each string fields, escape all \n characters."""
-    return Experiment(
-        question=escape_string(experiment.question),
-        human_answer=escape_string(experiment.human_answer),
-        baseline_answer=escape_string(experiment.baseline_answer),
-        grade_baseline=experiment.grade_baseline,
-        one_prompt_answer=escape_string(experiment.one_prompt_answer),
-        grade_1_prompt=experiment.grade_1_prompt,
-        n_prompts_initial_answer=escape_string(experiment.n_prompts_initial_answer),
-        n_prompts_reflection=escape_string(experiment.n_prompts_reflection),
-        n_prompts_final_answer=escape_string(experiment.n_prompts_final_answer),
-        grade_n_prompts=experiment.grade_n_prompts,
-    )
 
 
 async def eval_and_log(
@@ -104,8 +18,7 @@ async def eval_and_log(
     writer: csv.DictWriter,
 ) -> None:
     experiment = await eval_all_experiments(model, sample)
-    formatted_experiment = format_experiment(experiment)
-    writer.writerow(formatted_experiment.model_dump())
+    writer.writerow(experiment.model_dump())
 
 
 def batch_samples(samples: Iterable[Sample], batch_size: int) -> Iterator[list[Sample]]:
