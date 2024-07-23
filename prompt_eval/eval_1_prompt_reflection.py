@@ -5,7 +5,8 @@ from .grader import grade_answers
 
 
 SOLVE_PROMPT = """Solve the given word problem.
-After you have an initial answer, critique the answer for a question. Analyze its correctness, clarity, and completeness.
+First, find an initial answer with step-by-step reasoning.
+Then, critique the answer. Analyze its correctness, clarity, and completeness.
 Lastly, heed your own critique and provide an improved answer.
 
 Respond in the following format:
@@ -13,7 +14,7 @@ Respond in the following format:
 ```
 Initial answer: <Your step-by-step reasoning>
 #### <Your initial answer in succint form>
-Critique: <The critique>
+Critique: <The critique of the intial answer>
 Revised answer: <Your revised step-by-step reasoning>
 #### <Your final answer in succint form>
 ```

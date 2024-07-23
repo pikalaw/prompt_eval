@@ -34,26 +34,57 @@ def main() -> None:
     n_prompts_correct = len([e for e in experiments if e.grade_n_prompts == 1])
     n_prompts_incorrect = len([e for e in experiments if e.grade_n_prompts == 0])
 
+    one_prompt_improvement = len(
+        [e for e in experiments if e.grade_baseline == 0 and e.grade_1_prompt == 1]
+    )
+    one_prompt_deterioration = len(
+        [e for e in experiments if e.grade_baseline == 1 and e.grade_1_prompt == 0]
+    )
+    n_prompt_improvement = len(
+        [e for e in experiments if e.grade_baseline == 0 and e.grade_n_prompts == 1]
+    )
+    n_prompt_deterioration = len(
+        [e for e in experiments if e.grade_baseline == 1 and e.grade_n_prompts == 0]
+    )
+
     debug(
         baseline_correct=baseline_correct,
         baseline_incorrect=baseline_incorrect,
         baseline_accuracy=f"{baseline_correct / (baseline_correct + baseline_incorrect):.2%}",
+    )
+    debug(
         one_prompt_correct=one_prompt_correct,
         one_prompt_incorrect=one_prompt_incorrect,
         one_prompt_accuracy=f"{one_prompt_correct / (one_prompt_correct + one_prompt_incorrect):.2%}",
+        one_prompt_improvement=one_prompt_improvement,
+        one_prompt_deterioration=one_prompt_deterioration,
+    )
+    debug(
         n_prompts_correct=n_prompts_correct,
         n_prompts_incorrect=n_prompts_incorrect,
         n_prompts_accuracy=f"{n_prompts_correct / (n_prompts_correct + n_prompts_incorrect):.2%}",
+        n_prompt_improvement=n_prompt_improvement,
+        n_prompt_deterioration=n_prompt_deterioration,
     )
 
+    debug(
+        better_one_prompt=[
+            e for e in experiments if e.grade_baseline == 0 and e.grade_1_prompt == 1
+        ]
+    )
     debug(
         worse_one_prompt=[
             e for e in experiments if e.grade_baseline == 1 and e.grade_1_prompt == 0
         ]
     )
     debug(
+        better_n_prompts=[
+            e for e in experiments if e.grade_baseline == 0 and e.grade_n_prompts == 1
+        ]
+    )
+    debug(
         worse_n_prompts=[
-            e for e in experiments if e.grade_1_prompt == 1 and e.grade_n_prompts == 0
+            e for e in experiments if e.grade_baseline == 1 and e.grade_n_prompts == 0
         ]
     )
 
