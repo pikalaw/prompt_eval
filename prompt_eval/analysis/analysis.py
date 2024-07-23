@@ -4,11 +4,11 @@ from devtools import debug
 from pydantic import BaseModel
 from typing import Iterable
 
-from .eval_baseline import Experiment as BaselineExperiment
-from .eval_1_prompt_reflection import Experiment as OnePromptReflectionExperiment
-from .eval_n_prompts_reflection import Experiment as NPromptReflectionExperiment
-from .eval_n_prompts_consistency import Experiment as NPromptConsistencyExperiment
-from .eval_n_prompts_consistency import Experiment as NPromptConsistencyExperiment
+from ..eval_baseline import Experiment as BaselineExperiment
+from ..eval_1_prompt_reflection import Experiment as OnePromptReflectionExperiment
+from ..eval_n_prompts_reflection import Experiment as NPromptReflectionExperiment
+from ..eval_n_prompts_consistency import Experiment as NPromptConsistencyExperiment
+from ..eval_n_prompts_consistency import Experiment as NPromptConsistencyExperiment
 
 
 class Experiment(BaseModel):
