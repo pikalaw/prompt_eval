@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import Awaitable, Callable, Type, TypeAlias
+from typing import Awaitable, Callable, TypeAlias
 from .dataset_loader import Sample
 
 from .eval_baseline import eval_baseline
