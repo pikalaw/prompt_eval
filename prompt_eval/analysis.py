@@ -1,3 +1,5 @@
+"""Consider replacing this script with a SQL engine."""
+
 from devtools import debug
 from pydantic import BaseModel
 from typing import Iterable
