@@ -1,51 +1,111 @@
-import csv
 from devtools import debug
-from pydantic import field_validator
-from typing import Any, Iterator
-from .eval_all import Experiment as BaseExperiment
+from pydantic import BaseModel
+from typing import Iterable
+
+from .eval_baseline import Experiment as BaselineExperiment
+from .eval_1_prompt_reflection import Experiment as OnePromptExperiment
+from .eval_n_prompts_reflection import Experiment as NPromptExperiment
 
 
-class Experiment(BaseExperiment):
-    @field_validator("*", mode="before")
-    @classmethod
-    def empty_string_should_be_none(cls, value: Any) -> Any | None:
-        stripped_value = str(value).strip()
-        if stripped_value == "":
-            return None
-        return value
+class Experiment(BaseModel):
+    question: str
+    baseline_experiment: BaselineExperiment | None = None
+    one_prompt_experiment: OnePromptExperiment | None = None
+    n_prompts_experiment: NPromptExperiment | None = None
+
+    @property
+    def baseline_grade(self) -> int | None:
+        return self.baseline_experiment.grade if self.baseline_experiment else None
+
+    @property
+    def one_prompt_grade(self) -> int | None:
+        return self.one_prompt_experiment.grade if self.one_prompt_experiment else None
+
+    @property
+    def n_prompts_grade(self) -> int | None:
+        return self.n_prompts_experiment.grade if self.n_prompts_experiment else None
 
 
-def read_experiment(path: str) -> Iterator[Experiment]:
-    with open(path, "r") as f:
-        reader = csv.DictReader(f)
-        for row in reader:
-            yield Experiment.model_validate(row)
+def load_baseline_experiments() -> Iterable[BaselineExperiment]:
+    try:
+        with open("eval_baseline.json", "r") as f:
+            return [BaselineExperiment.model_validate_json(row) for row in f]
+    except FileNotFoundError:
+        return []
+
+
+def load_one_prompt_experiments() -> Iterable[OnePromptExperiment]:
+    try:
+        with open("eval_1_prompt_reflection.json", "r") as f:
+            return [OnePromptExperiment.model_validate_json(row) for row in f]
+    except FileNotFoundError:
+        return []
+
+
+def load_n_prompts_experiments() -> Iterable[NPromptExperiment]:
+    try:
+        with open("eval_n_prompts_reflection.json", "r") as f:
+            return [NPromptExperiment.model_validate_json(row) for row in f]
+    except FileNotFoundError:
+        return []
+
+
+def load_all_experiments() -> Iterable[Experiment]:
+    baseline_experiments = {e.question: e for e in load_baseline_experiments()}
+    one_prompt_experiments = {e.question: e for e in load_one_prompt_experiments()}
+    n_prompts_experiments = {e.question: e for e in load_n_prompts_experiments()}
+
+    all_experiments: dict[str, Experiment] = {}
+
+    for question, baseline_experiment in baseline_experiments.items():
+        if question not in all_experiments:
+            all_experiments[question] = Experiment(question=question)
+        all_experiments[question].baseline_experiment = baseline_experiment
+
+    for question, one_prompt_experiment in one_prompt_experiments.items():
+        if question not in all_experiments:
+            all_experiments[question] = Experiment(question=question)
+        all_experiments[question].one_prompt_experiment = one_prompt_experiment
+
+    for question, n_prompts_experiment in n_prompts_experiments.items():
+        if question not in all_experiments:
+            all_experiments[question] = Experiment(question=question)
+        all_experiments[question].n_prompts_experiment = n_prompts_experiment
+
+    return all_experiments.values()
 
 
 def main() -> None:
-    experiments = list(read_experiment("eval_result.csv"))
+    experiments = list(load_all_experiments())
 
-    baseline_correct = len([e for e in experiments if e.grade_baseline == 1])
-    baseline_incorrect = len([e for e in experiments if e.grade_baseline == 0])
+    baseline_correct = len([e for e in experiments if e.baseline_grade == 1])
+    baseline_incorrect = len([e for e in experiments if e.baseline_grade == 0])
 
-    one_prompt_correct = len([e for e in experiments if e.grade_1_prompt == 1])
-    one_prompt_incorrect = len([e for e in experiments if e.grade_1_prompt == 0])
+    one_prompt_correct = len([e for e in experiments if e.one_prompt_grade == 1])
+    one_prompt_incorrect = len([e for e in experiments if e.one_prompt_grade == 0])
 
-    n_prompts_correct = len([e for e in experiments if e.grade_n_prompts == 1])
-    n_prompts_incorrect = len([e for e in experiments if e.grade_n_prompts == 0])
+    n_prompts_correct = len([e for e in experiments if e.n_prompts_grade == 1])
+    n_prompts_incorrect = len([e for e in experiments if e.n_prompts_grade == 0])
 
-    one_prompt_improvement = len(
-        [e for e in experiments if e.grade_baseline == 0 and e.grade_1_prompt == 1]
-    )
-    one_prompt_deterioration = len(
-        [e for e in experiments if e.grade_baseline == 1 and e.grade_1_prompt == 0]
-    )
-    n_prompt_improvement = len(
-        [e for e in experiments if e.grade_baseline == 0 and e.grade_n_prompts == 1]
-    )
-    n_prompt_deterioration = len(
-        [e for e in experiments if e.grade_baseline == 1 and e.grade_n_prompts == 0]
-    )
+    better_one_prompt = [
+        e for e in experiments if e.baseline_grade == 0 and e.one_prompt_grade == 1
+    ]
+    one_prompt_improvement = len(better_one_prompt)
+
+    worse_one_prompt = [
+        e for e in experiments if e.baseline_grade == 1 and e.one_prompt_grade == 0
+    ]
+    one_prompt_deterioration = len(worse_one_prompt)
+
+    better_n_prompts = [
+        e for e in experiments if e.baseline_grade == 0 and e.n_prompts_grade == 1
+    ]
+    n_prompt_improvement = len(better_n_prompts)
+
+    worse_n_prompts = [
+        e for e in experiments if e.baseline_grade == 1 and e.n_prompts_grade == 0
+    ]
+    n_prompt_deterioration = len(worse_n_prompts)
 
     debug(
         baseline_correct=baseline_correct,
@@ -67,26 +127,10 @@ def main() -> None:
         n_prompt_deterioration=n_prompt_deterioration,
     )
 
-    debug(
-        better_one_prompt=[
-            e for e in experiments if e.grade_baseline == 0 and e.grade_1_prompt == 1
-        ]
-    )
-    debug(
-        worse_one_prompt=[
-            e for e in experiments if e.grade_baseline == 1 and e.grade_1_prompt == 0
-        ]
-    )
-    debug(
-        better_n_prompts=[
-            e for e in experiments if e.grade_baseline == 0 and e.grade_n_prompts == 1
-        ]
-    )
-    debug(
-        worse_n_prompts=[
-            e for e in experiments if e.grade_baseline == 1 and e.grade_n_prompts == 0
-        ]
-    )
+    debug(better_one_prompt)
+    debug(worse_one_prompt)
+    debug(better_n_prompts)
+    debug(worse_n_prompts)
 
 
 if __name__ == "__main__":

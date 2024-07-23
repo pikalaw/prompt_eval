@@ -23,7 +23,8 @@ The approach speed is 60 + 80 = 140 mph. So, the two trains will meet in 200 / 1
 ```
 """
 
-REFLECT_PROMPT = """Critique the answer for a question. Analyze its correctness, clarity, and completeness.
+REFLECT_PROMPT = """Critique the answer for a question.
+Do not try to solve the problem again. Simply check the correctness of each step of the initial answer. 
 
 The format of the input looks like this:
 
@@ -42,7 +43,7 @@ The format of the input looks like this:
 Question: <The question>
 Answer: <The reasoning for the answer>
 #### <The final answer>
-Critique: <The critique>
+Critique: <The critique of the answer above>
 ```
 
 Your reply should be in the following format:

@@ -1,68 +1,21 @@
 import asyncio
-import csv
 from huggingface_hub import login
 import logging
-import math
 import os
-from typing import cast, Iterable, Iterator, TypeVar
-from .dataset_loader import load_samples, Sample
-from .eval_all import Experiment, eval_all_experiments
+import sys
+from typing import Iterator
+from .dataset_loader import load_samples
+from .runner import EvalFunc, run_eval
+
+from .eval_list import EVAL_FUNCTIONS
 
 
-T = TypeVar("T")
-
-
-async def eval_and_log(
-    model: str,
-    sample: Sample,
-    writer: csv.DictWriter,
-) -> None:
-    experiment = await eval_all_experiments(model, sample)
-    writer.writerow(experiment.model_dump())
-
-
-def batch_samples(samples: Iterable[Sample], batch_size: int) -> Iterator[list[Sample]]:
-    batch: list[Sample] = []
-    for sample in samples:
-        batch.append(sample)
-        if len(batch) == batch_size:
-            yield batch
-            batch = []
-
-
-async def run_eval(
-    *,
-    model: str,
-    samples: Iterable[Sample],
-    output_filename: str,
-    batch_size: int = 10,
-    limit: int | None = None,
-) -> None:
-    actual_limit = limit or math.inf
-    done = 0
-    bad = 0
-    with open(output_filename, "w") as output:
-        writer = csv.DictWriter(
-            output,
-            fieldnames=Experiment.model_fields.keys(),
-            quoting=csv.QUOTE_ALL,
-        )
-        writer.writeheader()
-
-        for batch in batch_samples(samples, batch_size=batch_size):
-            results = await asyncio.gather(
-                *[eval_and_log(model, sample, writer) for sample in batch],
-                return_exceptions=True,
-            )
-
-            done += len(results)
-            bad += len(
-                [exception for exception in results if isinstance(exception, Exception)]
-            )
-            logging.info(f"Done {done} samples, with {bad} errors.")
-
-            if done >= actual_limit:
-                break
+def selected_eval_funcs() -> Iterator[EvalFunc]:
+    """Eval functions selected by the user."""
+    for eval_func_name in sys.argv[1:]:
+        if eval_func_name not in EVAL_FUNCTIONS:
+            raise ValueError(f"Unknown eval function: {eval_func_name}")
+        yield EVAL_FUNCTIONS[eval_func_name]
 
 
 async def main() -> None:
@@ -82,13 +35,15 @@ async def main() -> None:
     batch_size = 10
     limit = None
 
-    await run_eval(
-        model=model,
-        samples=samples,
-        output_filename="eval_result.csv",
-        batch_size=batch_size,
-        limit=limit,
-    )
+    for eval_func in selected_eval_funcs():
+        await run_eval(
+            model=model,
+            eval_func=eval_func,
+            samples=samples,
+            output_filename=f"{eval_func.__name__}.json",
+            batch_size=batch_size,
+            limit=limit,
+        )
 
 
 asyncio.run(main())
