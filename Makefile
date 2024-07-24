@@ -7,5 +7,8 @@ analyze:
 analyze_consistency:
 	python -m prompt_eval.analysis.analyze_consistency | tee analyze_consistency.log
 
+analyze_cot:
+	python -m prompt_eval.analysis.analyze_cot | tee analyze_cot.log
+
 lint:
 	mypy .
